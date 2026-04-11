@@ -1,0 +1,16 @@
+{
+  "name": "@dailypod/audio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@dailypod/types": "workspace:*",
+    "@breezystack/lamejs": "^1.2.7"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

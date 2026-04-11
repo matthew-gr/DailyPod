@@ -1,0 +1,16 @@
+{
+  "name": "@dailypod/feedback",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@dailypod/types": "workspace:*",
+    "@dailypod/storage": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

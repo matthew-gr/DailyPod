@@ -1,0 +1,17 @@
+{
+  "name": "@dailypod/meeting-context",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@dailypod/types": "workspace:*",
+    "@dailypod/drive": "workspace:*",
+    "@dailypod/calendar": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

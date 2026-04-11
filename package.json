@@ -1,0 +1,17 @@
+{
+  "name": "dailypod",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "briefing:run": "tsx apps/cli/src/index.ts run",
+    "briefing:inspect": "tsx apps/cli/src/index.ts inspect",
+    "briefing:feedback": "tsx apps/cli/src/index.ts feedback",
+    "typecheck": "tsc --build",
+    "clean": "rm -rf packages/*/dist apps/*/dist"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

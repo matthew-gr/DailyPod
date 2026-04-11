@@ -1,0 +1,23 @@
+{
+  "name": "@dailypod/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@dailypod/core": "workspace:*",
+    "@dailypod/config": "workspace:*",
+    "@dailypod/guide": "workspace:*",
+    "@dailypod/logging": "workspace:*",
+    "@dailypod/storage": "workspace:*",
+    "@dailypod/types": "workspace:*",
+    "@dailypod/calendar": "workspace:*",
+    "@dailypod/meeting-ranker": "workspace:*",
+    "@dailypod/meeting-context": "workspace:*",
+    "@dailypod/audio": "workspace:*",
+    "@dailypod/feedback": "workspace:*",
+    "commander": "^13.1.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@dailypod/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@dailypod/types": "workspace:*",
+    "@dailypod/logging": "workspace:*",
+    "@dailypod/storage": "workspace:*",
+    "@dailypod/config": "workspace:*",
+    "@dailypod/guide": "workspace:*",
+    "@dailypod/calendar": "workspace:*",
+    "@dailypod/meeting-ranker": "workspace:*",
+    "@dailypod/drive": "workspace:*",
+    "@dailypod/meeting-context": "workspace:*",
+    "@dailypod/news": "workspace:*",
+    "@dailypod/news-ranker": "workspace:*",
+    "@dailypod/editorial": "workspace:*",
+    "@dailypod/audio": "workspace:*",
+    "@google/generative-ai": "^0.24.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

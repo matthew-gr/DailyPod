@@ -1,0 +1,15 @@
+{
+  "name": "@dailypod/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
