@@ -1,0 +1,7 @@
+[build]
+buildCommand = "npx pnpm install && cd apps/web && npx prisma generate && npx next build"
+
+[deploy]
+startCommand = "cd apps/web && npx prisma db push --skip-generate && npx next start --port $PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
