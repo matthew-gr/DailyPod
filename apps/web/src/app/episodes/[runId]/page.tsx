@@ -36,13 +36,10 @@ export default async function EpisodeDetailPage({
   let script: { lines: ScriptLine[]; estimatedDurationSeconds: number } | null =
     null;
 
-  const scriptPath = resolve(
-    "data",
-    "artifacts",
-    session.user.id,
-    runId,
-    "script.json"
-  );
+  const artifactsBase = process.env.ARTIFACTS_BASE_PATH || "data";
+  const runArtifactDir = resolve(artifactsBase, "artifacts", session.user.id, runId);
+
+  const scriptPath = resolve(runArtifactDir, "script.json");
 
   if (existsSync(scriptPath)) {
     try {
@@ -53,9 +50,7 @@ export default async function EpisodeDetailPage({
     }
   }
 
-  const hasAudio = existsSync(
-    resolve("data", "artifacts", session.user.id, runId, "briefing.mp3")
-  );
+  const hasAudio = existsSync(resolve(runArtifactDir, "briefing.mp3"));
 
   const selectedNews = run.selectedNewsJson
     ? JSON.parse(run.selectedNewsJson)

@@ -50,7 +50,7 @@ export async function buildUserRunContext(
     news: { provider: "rss", apiKey: "" },
     paths: {
       guidePath: "",
-      artifactsPath: resolve("data", "artifacts", userId),
+      artifactsPath: resolve(process.env.ARTIFACTS_BASE_PATH || "data", "artifacts", userId),
     },
     briefing: {
       lengthMinutes: prefs.briefingLengthMinutes,
