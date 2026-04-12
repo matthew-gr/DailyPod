@@ -40,12 +40,18 @@ export function NavBar() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {session.user?.image && (
+            {session.user?.image ? (
               <img
                 src={session.user.image}
                 alt=""
                 className="h-7 w-7 rounded-full"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                referrerPolicy="no-referrer"
               />
+            ) : (
+              <div className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+                {(session.user?.name || session.user?.email || "?")[0].toUpperCase()}
+              </div>
             )}
             <span className="text-sm text-gray-700">
               {session.user?.name || session.user?.email}
