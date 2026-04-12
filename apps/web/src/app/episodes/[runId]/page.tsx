@@ -79,9 +79,18 @@ export default async function EpisodeDetailPage({
       {/* Audio Player */}
       {hasAudio && (
         <div>
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">
-            Listen
-          </h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+              Listen
+            </h2>
+            <a
+              href={`/api/briefing/${runId}/audio?download=1`}
+              download={`briefing-${run.date}.mp3`}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              &#8595; Download MP3
+            </a>
+          </div>
           <AudioPlayer runId={runId} />
         </div>
       )}

@@ -6,7 +6,7 @@ import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const session = await getServerSession();
@@ -41,11 +41,18 @@ export async function GET(
 
   const audioBuffer = await readFile(audioPath);
 
-  return new NextResponse(audioBuffer, {
-    headers: {
-      "Content-Type": "audio/mpeg",
-      "Content-Length": String(audioBuffer.length),
-      "Cache-Control": "public, max-age=86400",
-    },
-  });
+  const url = new URL(request.url);
+  const isDownload = url.searchParams.get("download") === "1";
+
+  const headers: Record<string, string> = {
+    "Content-Type": "audio/mpeg",
+    "Content-Length": String(audioBuffer.length),
+    "Cache-Control": "public, max-age=86400",
+  };
+
+  if (isDownload) {
+    headers["Content-Disposition"] = `attachment; filename="briefing-${run.date}.mp3"`;
+  }
+
+  return new NextResponse(audioBuffer, { headers });
 }
