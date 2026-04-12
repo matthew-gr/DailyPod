@@ -83,9 +83,11 @@ function parseVIPContacts(text: string): VIPContact[] {
   return contacts;
 }
 
-export async function loadGuide(filePath: string): Promise<BriefingGuide> {
-  const raw = await readFile(filePath, "utf-8");
-
+/**
+ * Parse a markdown string into a BriefingGuide.
+ * Can be called directly with markdown content (e.g. from DB).
+ */
+export function parseGuide(raw: string): BriefingGuide {
   const guide: BriefingGuide = {
     currentPriorities: [],
     values: [],
@@ -120,4 +122,12 @@ export async function loadGuide(filePath: string): Promise<BriefingGuide> {
   }
 
   return guide;
+}
+
+/**
+ * Load and parse a briefing guide from a file path.
+ */
+export async function loadGuide(filePath: string): Promise<BriefingGuide> {
+  const raw = await readFile(filePath, "utf-8");
+  return parseGuide(raw);
 }

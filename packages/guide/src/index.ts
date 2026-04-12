@@ -1,1 +1,1 @@
-export { loadGuide } from "./loader.js";
+export { loadGuide, parseGuide } from "./loader.js";

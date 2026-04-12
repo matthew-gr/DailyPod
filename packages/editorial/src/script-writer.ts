@@ -15,6 +15,8 @@ import type {
 export interface ScriptWriterConfig {
   apiKey: string;
   learningDir?: string;
+  /** Pre-built learning prompt string (used by web app instead of learningDir) */
+  learningPrompt?: string;
   model?: string;
   promptPath?: string;
 }
@@ -138,7 +140,10 @@ export async function generateScript(
   let userPrompt = buildUserPrompt(input);
 
   // Inject learning from past feedback
-  if (config.learningDir) {
+  if (config.learningPrompt) {
+    // Pre-built learning prompt (from web app)
+    userPrompt += "\n\n" + config.learningPrompt;
+  } else if (config.learningDir) {
     const learningPrompt = await buildLearningPrompt(config.learningDir);
     if (learningPrompt) {
       userPrompt += "\n\n" + learningPrompt;

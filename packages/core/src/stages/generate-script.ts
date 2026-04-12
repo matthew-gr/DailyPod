@@ -27,7 +27,8 @@ export const generateScriptStage: PipelineStage = {
       },
       {
         apiKey: config.llm.apiKey,
-        learningDir: resolve("data", "learning"),
+        learningDir: context.learningPrompt ? undefined : resolve("data", "learning"),
+        learningPrompt: context.learningPrompt,
       }
     );
 

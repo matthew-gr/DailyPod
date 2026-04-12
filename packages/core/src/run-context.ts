@@ -12,6 +12,8 @@ export interface RunContext {
   logger: Logger;
   store: ArtifactStore;
   data: PipelineData;
+  /** Pre-built learning prompt from feedback (used by web app instead of learningDir) */
+  learningPrompt?: string;
 }
 
 export function generateRunId(date: string): string {

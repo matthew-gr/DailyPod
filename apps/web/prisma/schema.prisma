@@ -1,0 +1,136 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  name                String?
+  image               String?
+  emailVerified       DateTime?
+  learnedPreferences  String?   // JSON stored as text (SQLite)
+  learnedExamples     String?   // JSON stored as text (SQLite)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  googleConnection GoogleConnection?
+  preferences      UserPreferences?
+  briefingGuide    BriefingGuide?
+  briefingRuns     BriefingRun[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model GoogleConnection {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  googleEmail  String
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  scope        String
+  calendarId   String   @default("primary")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserPreferences {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  briefingLengthMinutes  Int      @default(5)
+  tone                   String   @default("calm, intelligent, practical")
+  hostAVoice             String   @default("Charon")
+  hostBVoice             String   @default("Aoede")
+  newsInterests          String   @default("[]")
+  newsToIgnore           String   @default("[]")
+  timezone               String   @default("UTC")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BriefingGuide {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  markdown  String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BriefingRun {
+  id                    String    @id @default(cuid())
+  userId                String
+  runId                 String    @unique
+  date                  String
+  status                String    @default("running")
+  startedAt             DateTime  @default(now())
+  completedAt           DateTime?
+  error                 String?
+  stagesJson            String?
+  selectedMeetingTitle  String?
+  selectedNewsJson      String?
+  audioDurationSeconds  Int?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback BriefingFeedback?
+}
+
+model BriefingFeedback {
+  id             String   @id @default(cuid())
+  briefingRunId  String   @unique
+  overall        Int
+  segmentsJson   String?
+  freeText       String?
+  annotationsJson String?
+  createdAt      DateTime @default(now())
+
+  briefingRun BriefingRun @relation(fields: [briefingRunId], references: [id], onDelete: Cascade)
+}
