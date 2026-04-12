@@ -115,6 +115,7 @@ model BriefingRun {
   stagesJson            String?
   selectedMeetingTitle  String?
   selectedNewsJson      String?
+  meetingContextJson    String?
   audioDurationSeconds  Int?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt

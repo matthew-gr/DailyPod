@@ -61,6 +61,10 @@ export default async function EpisodeDetailPage({
     ? JSON.parse(run.selectedNewsJson)
     : null;
 
+  const meetingContext = run.meetingContextJson
+    ? JSON.parse(run.meetingContextJson)
+    : null;
+
   return (
     <div className="space-y-8">
       <div>
@@ -107,6 +111,75 @@ export default async function EpisodeDetailPage({
           </div>
         )}
       </div>
+
+      {/* Meeting Context */}
+      {meetingContext && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
+            Meeting Context
+          </h2>
+
+          {meetingContext.summary && (
+            <div className="mb-4">
+              <h3 className="text-xs font-medium text-gray-400 uppercase mb-1">Summary</h3>
+              <p className="text-sm text-gray-800 leading-relaxed">{meetingContext.summary}</p>
+            </div>
+          )}
+
+          {meetingContext.keyInsights?.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-xs font-medium text-gray-400 uppercase mb-1">Key Insights</h3>
+              <ul className="text-sm text-gray-800 space-y-1">
+                {meetingContext.keyInsights.map((insight: string, i: number) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-blue-500 mt-0.5">&#8227;</span>
+                    <span>{insight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {meetingContext.pendingItems?.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-xs font-medium text-gray-400 uppercase mb-1">Pending Items</h3>
+              <ul className="text-sm text-gray-800 space-y-1">
+                {meetingContext.pendingItems.map((item: string, i: number) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-orange-500 mt-0.5">&#9679;</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {meetingContext.suggestedPrepQuestions?.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-xs font-medium text-gray-400 uppercase mb-1">Prep Questions</h3>
+              <ul className="text-sm text-gray-800 space-y-1">
+                {meetingContext.suggestedPrepQuestions.map((q: string, i: number) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-purple-500 mt-0.5">?</span>
+                    <span>{q}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {meetingContext.relatedDocuments?.length > 0 && (
+            <div>
+              <h3 className="text-xs font-medium text-gray-400 uppercase mb-1">Related Documents</h3>
+              <ul className="text-sm text-gray-600 space-y-0.5">
+                {meetingContext.relatedDocuments.map((doc: { title: string; relevance: string }, i: number) => (
+                  <li key={i}>{doc.title} <span className="text-gray-400">— {doc.relevance}</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Script */}
       {script && script.lines.length > 0 && (

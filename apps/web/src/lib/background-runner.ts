@@ -64,6 +64,7 @@ export async function startRun(
 
       const selectedMeeting = context.data.selectedMeeting;
       const rankedNews = context.data.rankedNews;
+      const meetingContext = context.data.meetingContext;
       const audioDuration = context.data.audio?.durationSeconds;
 
       await prisma.briefingRun.update({
@@ -75,6 +76,9 @@ export async function startRun(
           selectedMeetingTitle: selectedMeeting?.event?.title || null,
           selectedNewsJson: rankedNews.length > 0
             ? JSON.stringify(rankedNews.map((n) => n.story.title))
+            : null,
+          meetingContextJson: meetingContext
+            ? JSON.stringify(meetingContext)
             : null,
           audioDurationSeconds: audioDuration
             ? Math.round(audioDuration)
