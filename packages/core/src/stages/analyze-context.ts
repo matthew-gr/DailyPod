@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { PipelineStage } from "../stage.js";
 import type { RunContext } from "../run-context.js";
@@ -28,11 +26,7 @@ export const analyzeContextStage: PipelineStage = {
 
     log.info(`Analyzing ${docsWithText.length} documents with extracted text for meeting: "${data.meetingContext.meetingTitle}"`);
 
-    // Build the prompt with transcript content
-    const systemPrompt = await readFile(
-      resolve("prompts", "context-analyzer.txt"),
-      "utf-8"
-    );
+    const systemPrompt = CONTEXT_ANALYZER_PROMPT;
 
     const textChunks = docsWithText
       .slice(0, 3) // Top 3 docs
@@ -101,3 +95,36 @@ export const analyzeContextStage: PipelineStage = {
     }
   },
 };
+
+const CONTEXT_ANALYZER_PROMPT = `You are analyzing meeting transcripts and documents to prepare an executive for their upcoming meeting.
+
+Given the meeting title, attendees, and extracted text from related transcripts/documents, produce a structured analysis.
+
+Your job is to find the SUBSTANCE — what was actually discussed, what decisions were made, what problems exist, and where the project is headed. Then ADD VALUE by bringing in your own knowledge.
+
+DO NOT:
+- Be vague or generic ("the team discussed various topics")
+- Comment on the fact that transcripts exist
+- Repeat meeting metadata (title, time, attendees)
+- State the obvious — the listener knows these meetings well
+- Frame everything as questions — the listener wants insights, not an interrogation
+- Use terms like "open loops" or "talking points"
+
+DO:
+- Summarize the current state of the project/initiative concretely
+- Identify specific decisions pending and blockers
+- Note what the listener committed to or needs to follow up on
+- Bring in outside knowledge: industry trends, tools, frameworks, comparable approaches that could help
+- Suggest 1-2 specific ideas or angles the listener hasn't considered — things that could unlock progress or deliver more value
+- If relevant, mention a tool, technique, or resource by name that could help (e.g. "Notion AI for doc generation", "n8n for automating the intake workflow")
+- Keep prep questions to 1-2 max — only if genuinely important
+
+OUTPUT FORMAT — return valid JSON:
+{
+  "summary": "2-4 sentences on where this project stands and what matters most right now",
+  "keyInsights": ["specific insight or suggestion that adds value", "another angle worth considering"],
+  "pendingItems": ["concrete thing that needs resolution", "specific follow-up the listener owns"],
+  "suggestedPrepQuestions": ["at most 1-2 sharp questions, only if truly needed"]
+}
+
+Keep each array to 2-4 items. Be specific and substantive.`;
