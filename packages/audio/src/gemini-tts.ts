@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
-// @ts-expect-error - lamejs has no types
+// @ts-ignore - lamejs may not have types in all environments
 import lamejs from "@breezystack/lamejs";
-import type { Script, AudioResult, VoiceConfig, ScriptLine } from "@dailypod/types";
+import type { Script, AudioResult, VoiceConfig, ScriptLine, Speaker } from "@dailypod/types";
 import type { TTSProvider } from "./tts-interface.js";
 
 /**
@@ -102,8 +102,8 @@ async function renderSegment(
  * Batch script lines into chunks per speaker to reduce API calls.
  * Groups consecutive lines by the same speaker.
  */
-function batchLines(lines: ScriptLine[]): Array<{ speaker: string; text: string }> {
-  const batches: Array<{ speaker: string; text: string }> = [];
+function batchLines(lines: ScriptLine[]): Array<{ speaker: Speaker; text: string }> {
+  const batches: Array<{ speaker: Speaker; text: string }> = [];
 
   for (const line of lines) {
     const last = batches[batches.length - 1];

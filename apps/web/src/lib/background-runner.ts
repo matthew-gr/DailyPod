@@ -72,7 +72,7 @@ export async function startRun(
           status: "completed",
           completedAt: new Date(),
           stagesJson: JSON.stringify(result.stages),
-          selectedMeetingTitle: selectedMeeting?.title || null,
+          selectedMeetingTitle: selectedMeeting?.event?.title || null,
           selectedNewsJson: rankedNews.length > 0
             ? JSON.stringify(rankedNews.map((n) => n.story.title))
             : null,

@@ -58,12 +58,18 @@ export async function buildUserRunContext(
     },
   };
 
-  const logger = createLogger({ level: "info", prefix: `web:${userId.slice(0, 8)}` });
+  const logger = createLogger(`web:${userId.slice(0, 8)}`, "info");
   const store = new FileArtifactStore(appConfig.paths.artifactsPath);
 
   const context = createRunContext({
     config: appConfig,
-    runConfig: { date },
+    runConfig: {
+      date,
+      guidePath: "",
+      artifactsPath: appConfig.paths.artifactsPath,
+      calendarId: appConfig.briefing.calendarId,
+      briefingLengthMinutes: appConfig.briefing.lengthMinutes,
+    },
     guide,
     logger,
     store,
@@ -71,12 +77,10 @@ export async function buildUserRunContext(
 
   // Build learning prompt from user's stored feedback data
   if (user?.learnedPreferences || user?.learnedExamples) {
-    const learnedPrefs = user.learnedPreferences
-      ? JSON.parse(user.learnedPreferences)
-      : null;
-    const learnedExamples = user.learnedExamples
-      ? JSON.parse(user.learnedExamples)
-      : null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const learnedPrefs = (user.learnedPreferences ?? null) as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const learnedExamples = (user.learnedExamples ?? null) as any;
     const prompt = buildLearningPromptFromData(learnedPrefs, learnedExamples);
     if (prompt) {
       context.learningPrompt = prompt;
