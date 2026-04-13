@@ -55,7 +55,7 @@ export function loadConfig(): AppConfig {
       artifactsPath: optionalEnv("ARTIFACTS_PATH", "./data/artifacts"),
     },
     briefing: {
-      lengthMinutes: parseInt(optionalEnv("BRIEFING_LENGTH_MINUTES", "8"), 10),
+      lengthMinutes: parseInt(optionalEnv("BRIEFING_LENGTH_MINUTES", "5"), 10),
       calendarId: optionalEnv("BRIEFING_CALENDAR_ID", "primary"),
     },
   };
