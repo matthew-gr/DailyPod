@@ -42,12 +42,13 @@ function buildUserPrompt(input: ScriptWriterInput): string {
   const parts: string[] = [];
 
   const targetMinutes = Math.round(input.plan.totalTargetDurationSeconds / 60);
-  const targetWords = Math.round(input.plan.totalTargetDurationSeconds * 2.5);
+  // TTS speaks at ~180 wpm. LLMs undershoot by ~20%. Overshoot to compensate.
+  const targetWords = Math.round(input.plan.totalTargetDurationSeconds * 3.7);
 
   parts.push(`DATE: ${input.plan.date}`);
   parts.push(`TARGET DURATION: ${targetMinutes} minutes (${input.plan.totalTargetDurationSeconds} seconds)`);
-  parts.push(`TARGET WORD COUNT: ${targetWords} words total across all lines (at 150 words/minute)`);
-  parts.push(`MINIMUM LINES: 20 script lines. You MUST produce at least 20 lines.`);
+  parts.push(`TARGET WORD COUNT: ${targetWords} words total. This is critical — count your words. Do NOT fall short.`);
+  parts.push(`MINIMUM LINES: 25 script lines. You MUST produce at least 25 lines.`);
   parts.push(`OVERALL TONE: ${input.plan.overallTone}`);
   parts.push("");
 
@@ -271,14 +272,14 @@ Return ONLY a JSON array of script lines. Each line must have:
 - "segmentType": one of "opening", "meeting-prep", "news", "priority-reflection", "closing"
 
 CRITICAL LENGTH RULES — READ CAREFULLY:
-- The TTS engine speaks at 150 words per minute
-- You will be given a TARGET WORD COUNT — you MUST hit it within 10%
-- Count your words as you write. If the target is 750 words, your total output must be 675-825 words
-- Each script line should be 20-40 words
-- Produce 20-30 lines total
+- The TTS engine speaks at approximately 180 words per minute
+- You will be given a TARGET WORD COUNT — you MUST hit it. Do NOT fall short.
+- If the target is 1100 words, you must write at least 1000 words. Count as you go.
+- Each script line should be 25-50 words
+- Produce 25-35 lines total
 - Opening: 1 line ONLY. Just "Good morning, here's your briefing." or similar. NO schedule overview, NO date, NO preamble. Get to content immediately.
-- Meeting prep: 10-14 lines — this is the bulk, go deep on substance
-- News: 6-8 lines
+- Meeting prep: 12-16 lines — this is the bulk, go deep on substance
+- News: 6-10 lines
 - Priority reflection: 2-3 lines
 - Closing: 1 line. Brief. "That's your briefing." or similar.
 - Return ONLY the JSON array, no markdown, no backticks, no explanation
