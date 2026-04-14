@@ -42,13 +42,17 @@ function buildUserPrompt(input: ScriptWriterInput): string {
   const parts: string[] = [];
 
   const targetMinutes = Math.round(input.plan.totalTargetDurationSeconds / 60);
-  // TTS speaks at ~180 wpm. LLMs undershoot by ~20%. Overshoot to compensate.
-  const targetWords = Math.round(input.plan.totalTargetDurationSeconds * 3.7);
+  // Real TTS speed: 157 wpm. LLM delivers ~53% of requested words.
+  // To get X minutes: need X*157 words spoken, request X*157/0.53 = X*296 words
+  // For 5 min: need 785 words, request 1483 words
+  const wordsNeeded = Math.round((input.plan.totalTargetDurationSeconds / 60) * 157);
+  const targetWords = Math.round(wordsNeeded / 0.53);
 
   parts.push(`DATE: ${input.plan.date}`);
   parts.push(`TARGET DURATION: ${targetMinutes} minutes (${input.plan.totalTargetDurationSeconds} seconds)`);
-  parts.push(`TARGET WORD COUNT: ${targetWords} words total. This is critical — count your words. Do NOT fall short.`);
-  parts.push(`MINIMUM LINES: 25 script lines. You MUST produce at least 25 lines.`);
+  parts.push(`REQUIRED WORD COUNT: You MUST write exactly ${targetWords} words. This is not a suggestion.`);
+  parts.push(`That means approximately ${Math.round(targetWords / 30)} lines of 30 words each.`);
+  parts.push(`MINIMUM LINES: ${Math.round(targetWords / 30)} lines. Do not produce fewer.`);
   parts.push(`OVERALL TONE: ${input.plan.overallTone}`);
   parts.push("");
 
@@ -125,6 +129,40 @@ function buildUserPrompt(input: ScriptWriterInput): string {
   return parts.join("\n");
 }
 
+// Real measured TTS speed
+const TTS_WORDS_PER_MINUTE = 157;
+
+function countWords(lines: ScriptLine[]): number {
+  return lines.reduce((sum, l) => sum + l.text.split(/\s+/).length, 0);
+}
+
+function parseScriptResponse(responseText: string): ScriptLine[] {
+  let lines: ScriptLine[];
+  try {
+    const parsed = JSON.parse(responseText);
+    lines = Array.isArray(parsed) ? parsed : parsed.lines || parsed.script || [];
+  } catch {
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      try {
+        lines = JSON.parse(jsonMatch[0]);
+      } catch {
+        lines = extractPartialLines(responseText);
+      }
+    } else {
+      lines = extractPartialLines(responseText);
+    }
+  }
+
+  return lines
+    .filter((l) => l.speaker && l.text && l.segmentType)
+    .map((l) => ({
+      speaker: l.speaker === "host-b" ? "host-b" : "host-a",
+      text: l.text.trim(),
+      segmentType: l.segmentType,
+    }));
+}
+
 export async function generateScript(
   input: ScriptWriterInput,
   config: ScriptWriterConfig
@@ -147,7 +185,6 @@ export async function generateScript(
 
   // Inject learning from past feedback
   if (config.learningPrompt) {
-    // Pre-built learning prompt (from web app)
     userPrompt += "\n\n" + config.learningPrompt;
   } else if (config.learningDir) {
     const learningPrompt = await buildLearningPrompt(config.learningDir);
@@ -156,62 +193,57 @@ export async function generateScript(
     }
   }
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-    systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
-    generationConfig: {
-      temperature: 0.8,
-      maxOutputTokens: 16384,
-      responseMimeType: "application/json",
-      // @ts-expect-error - thinkingConfig available on 2.5 models
-      thinkingConfig: { thinkingBudget: 512 },
-    },
-  });
+  // Calculate minimum acceptable word count (80% of what we need for target duration)
+  const targetDurationMin = input.plan.totalTargetDurationSeconds / 60;
+  const minAcceptableWords = Math.round(targetDurationMin * TTS_WORDS_PER_MINUTE * 0.8);
 
-  const responseText = result.response.text();
+  // Retry loop: generate script, check word count, retry if too short
+  const MAX_ATTEMPTS = 3;
+  let bestLines: ScriptLine[] = [];
+  let bestWordCount = 0;
 
-  // Parse JSON response — handle truncated output gracefully
-  let lines: ScriptLine[];
-  try {
-    const parsed = JSON.parse(responseText);
-    lines = Array.isArray(parsed) ? parsed : parsed.lines || parsed.script || [];
-  } catch {
-    // Try to extract JSON from the response if wrapped in markdown
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      try {
-        lines = JSON.parse(jsonMatch[0]);
-      } catch {
-        // Truncated JSON — try to salvage complete objects
-        lines = extractPartialLines(responseText);
-      }
-    } else {
-      // Last resort — salvage what we can
-      lines = extractPartialLines(responseText);
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let promptForAttempt = userPrompt;
+
+    if (attempt === 2) {
+      promptForAttempt += `\n\nIMPORTANT: Your previous attempt was too short. You MUST write more content. The minimum is ${minAcceptableWords} words. Write longer lines and more of them.`;
+    } else if (attempt === 3) {
+      promptForAttempt += `\n\nCRITICAL: You have failed to meet the word count twice. You need at least ${minAcceptableWords} words. Each line should be 40-60 words. Write ${Math.round(minAcceptableWords / 40)} lines minimum. Do NOT be concise — be thorough and detailed.`;
     }
 
-    if (lines.length === 0) {
-      throw new Error(`Failed to parse script JSON: ${responseText.slice(0, 200)}`);
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: promptForAttempt }] }],
+      systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
+      generationConfig: {
+        temperature: 0.8 + (attempt - 1) * 0.1, // slightly higher temp on retries
+        maxOutputTokens: 16384,
+        responseMimeType: "application/json",
+        // @ts-expect-error - thinkingConfig available on 2.5 models
+        thinkingConfig: { thinkingBudget: 512 },
+      },
+    });
+
+    const lines = parseScriptResponse(result.response.text());
+    const wordCount = countWords(lines);
+
+    if (wordCount > bestWordCount) {
+      bestLines = lines;
+      bestWordCount = wordCount;
     }
+
+    if (wordCount >= minAcceptableWords) {
+      break; // Good enough
+    }
+
+    // Log the retry
+    console.log(`Script attempt ${attempt}: ${wordCount} words (need ${minAcceptableWords}), ${lines.length} lines — retrying`);
   }
 
-  // Validate and clean
-  const validLines: ScriptLine[] = lines
-    .filter((l) => l.speaker && l.text && l.segmentType)
-    .map((l) => ({
-      speaker: l.speaker === "host-b" ? "host-b" : "host-a",
-      text: l.text.trim(),
-      segmentType: l.segmentType,
-    }));
-
-  // Estimate duration (~2.5 words per second)
-  const totalWords = validLines.reduce(
-    (sum, l) => sum + l.text.split(/\s+/).length, 0
-  );
-  const estimatedDurationSeconds = Math.round(totalWords / 2.5);
+  // Use real TTS speed for duration estimate
+  const estimatedDurationSeconds = Math.round((bestWordCount / TTS_WORDS_PER_MINUTE) * 60);
 
   return {
-    lines: validLines,
+    lines: bestLines,
     estimatedDurationSeconds,
   };
 }
@@ -268,20 +300,19 @@ WHAT GOOD SOUNDS LIKE:
 OUTPUT FORMAT:
 Return ONLY a JSON array of script lines. Each line must have:
 - "speaker": either "host-a" or "host-b"
-- "text": the dialogue line (20-40 words each)
+- "text": the dialogue line (30-50 words each — longer lines are better)
 - "segmentType": one of "opening", "meeting-prep", "news", "priority-reflection", "closing"
 
-CRITICAL LENGTH RULES — READ CAREFULLY:
-- The TTS engine speaks at approximately 180 words per minute
-- You will be given a TARGET WORD COUNT — you MUST hit it. Do NOT fall short.
-- If the target is 1100 words, you must write at least 1000 words. Count as you go.
-- Each script line should be 25-50 words
-- Produce 25-35 lines total
-- Opening: 1 line ONLY. Just "Good morning, here's your briefing." or similar. NO schedule overview, NO date, NO preamble. Get to content immediately.
-- Meeting prep: 12-16 lines — this is the bulk, go deep on substance
-- News: 6-10 lines
+CRITICAL LENGTH RULES — YOUR OUTPUT WILL BE REJECTED IF TOO SHORT:
+- You will be given a REQUIRED WORD COUNT and a MINIMUM LINE COUNT
+- You MUST meet both. If you write fewer words, the script will be rejected and you will be asked again
+- Each line should be 30-50 words. Short lines waste the listener's time with constant speaker switches
+- Write substantive, detailed lines — not terse bullet points
+- Opening: 1 line ONLY. Get to content immediately.
+- Meeting prep: the bulk of the script — go deep, be specific, give real insights
+- News: thorough coverage of each story with analysis
 - Priority reflection: 2-3 lines
-- Closing: 1 line. Brief. "That's your briefing." or similar.
+- Closing: 1 line
 - Return ONLY the JSON array, no markdown, no backticks, no explanation
 
 OPENING ANTI-PATTERN — DO NOT DO THIS:

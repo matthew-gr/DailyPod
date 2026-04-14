@@ -50,7 +50,7 @@ export default async function EpisodeDetailPage({
     }
   }
 
-  const hasAudio = existsSync(resolve(runArtifactDir, "briefing.mp3"));
+  const hasAudio = existsSync(resolve(runArtifactDir, "briefing.mp3")) || (run.audioDurationSeconds != null && run.audioDurationSeconds > 0);
 
   const selectedNews = run.selectedNewsJson
     ? JSON.parse(run.selectedNewsJson)

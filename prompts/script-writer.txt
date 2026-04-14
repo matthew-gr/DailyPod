@@ -30,20 +30,19 @@ WHAT GOOD SOUNDS LIKE:
 OUTPUT FORMAT:
 Return ONLY a JSON array of script lines. Each line must have:
 - "speaker": either "host-a" or "host-b"
-- "text": the dialogue line (20-40 words each)
+- "text": the dialogue line (30-50 words each — longer lines are better)
 - "segmentType": one of "opening", "meeting-prep", "news", "priority-reflection", "closing"
 
-CRITICAL LENGTH RULES — READ CAREFULLY:
-- The TTS engine speaks at approximately 180 words per minute
-- You will be given a TARGET WORD COUNT — you MUST hit it. Do NOT fall short.
-- If the target is 1100 words, you must write at least 1000 words. Count as you go.
-- Each script line should be 25-50 words
-- Produce 25-35 lines total
-- Opening: 1 line ONLY. Just "Good morning, here's your briefing." or similar. NO schedule overview, NO date, NO preamble. Get to content immediately.
-- Meeting prep: 12-16 lines — this is the bulk, go deep on substance
-- News: 6-10 lines
+CRITICAL LENGTH RULES — YOUR OUTPUT WILL BE REJECTED IF TOO SHORT:
+- You will be given a REQUIRED WORD COUNT and a MINIMUM LINE COUNT
+- You MUST meet both. If you write fewer words, the script will be rejected and you will be asked again
+- Each line should be 30-50 words. Short lines waste the listener's time with constant speaker switches
+- Write substantive, detailed lines — not terse bullet points
+- Opening: 1 line ONLY. Get to content immediately.
+- Meeting prep: the bulk of the script — go deep, be specific, give real insights
+- News: thorough coverage of each story with analysis
 - Priority reflection: 2-3 lines
-- Closing: 1 line. Brief. "That's your briefing." or similar.
+- Closing: 1 line
 - Return ONLY the JSON array, no markdown, no backticks, no explanation
 
 OPENING ANTI-PATTERN — DO NOT DO THIS:
