@@ -11,6 +11,7 @@ export function AudioPlayer({ runId }: AudioPlayerProps) {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [speed, setSpeed] = useState(1);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -48,6 +49,17 @@ export function AudioPlayer({ runId }: AudioPlayerProps) {
     const time = Number(e.target.value);
     audio.currentTime = time;
     setCurrentTime(time);
+  }
+
+  const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
+
+  function cycleSpeed() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const nextIndex = (SPEEDS.indexOf(speed) + 1) % SPEEDS.length;
+    const nextSpeed = SPEEDS[nextIndex];
+    audio.playbackRate = nextSpeed;
+    setSpeed(nextSpeed);
   }
 
   function formatTime(seconds: number): string {
@@ -88,6 +100,13 @@ export function AudioPlayer({ runId }: AudioPlayerProps) {
         <span className="text-sm text-gray-500 tabular-nums min-w-[4rem] text-right">
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
+        <button
+          onClick={cycleSpeed}
+          className="text-xs font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 rounded px-2 py-1 min-w-[3rem] transition-colors"
+          title="Playback speed"
+        >
+          {speed}x
+        </button>
       </div>
     </div>
   );
