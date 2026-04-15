@@ -77,9 +77,10 @@ export async function buildUserRunContext(
     store,
   });
 
-  // Set advanced client resolution settings
+  // Set user preferences on context
   context.advancedClientResolution = prefs.advancedClientResolution ?? false;
   context.mappingSheetId = prefs.mappingSheetId || undefined;
+  context.timezone = prefs.timezone || "UTC";
 
   // Load Action Bot daily briefing if connected
   try {

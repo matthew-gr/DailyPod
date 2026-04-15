@@ -30,12 +30,18 @@ export interface ScriptWriterInput {
   guide: BriefingGuide;
   projectSummaries?: ProjectSummary[];
   actionBotBriefing?: string;
+  timezone?: string;
 }
 
-function formatTime(isoTime: string): string {
+function formatTime(isoTime: string, timezone?: string): string {
   try {
     const d = new Date(isoTime);
-    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    return d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: timezone || "UTC",
+    });
   } catch {
     return isoTime;
   }
@@ -43,6 +49,7 @@ function formatTime(isoTime: string): string {
 
 function buildUserPrompt(input: ScriptWriterInput): string {
   const parts: string[] = [];
+  const tz = input.timezone;
 
   const targetMinutes = Math.round(input.plan.totalTargetDurationSeconds / 60);
   // Real TTS speed: 157 wpm. With retry loop, LLM delivers ~75% of requested words.
@@ -68,7 +75,7 @@ function buildUserPrompt(input: ScriptWriterInput): string {
     for (const m of realMeetings) {
       const attendeeStr = m.attendees.slice(0, 4).map((a) => a.name || a.email.split("@")[0]).join(", ");
       const more = m.attendees.length > 4 ? ` +${m.attendees.length - 4} more` : "";
-      parts.push(`  ${formatTime(m.startTime)} — ${m.title} (${attendeeStr}${more})${m.isRecurring ? " [recurring]" : ""}`);
+      parts.push(`  ${formatTime(m.startTime, tz)} — ${m.title} (${attendeeStr}${more})${m.isRecurring ? " [recurring]" : ""}`);
     }
     parts.push("Include a 1-2 line spoken schedule overview after the opening — how many meetings, first client meeting, what we'll deep-dive on.");
     parts.push("");
@@ -89,7 +96,7 @@ function buildUserPrompt(input: ScriptWriterInput): string {
   if (input.meetingContext) {
     parts.push("=== FOCUS MEETING — DEEP PREP ===");
     parts.push(`Meeting: ${input.meetingContext.meetingTitle}`);
-    parts.push(`Time: ${formatTime(input.meetingContext.meetingTime)}`);
+    parts.push(`Time: ${formatTime(input.meetingContext.meetingTime, tz)}`);
     parts.push(`Attendees: ${input.meetingContext.attendeeSummary}`);
     parts.push("");
 

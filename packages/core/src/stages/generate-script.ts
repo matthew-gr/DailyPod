@@ -26,6 +26,7 @@ export const generateScriptStage: PipelineStage = {
         guide,
         projectSummaries: data.projectSummaries.length > 0 ? data.projectSummaries : undefined,
         actionBotBriefing: context.actionBotBriefing,
+        timezone: context.timezone,
       },
       {
         apiKey: config.llm.apiKey,

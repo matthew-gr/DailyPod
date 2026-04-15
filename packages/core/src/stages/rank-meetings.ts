@@ -36,17 +36,6 @@ export const rankMeetingsStage: PipelineStage = {
       log.info(`Selected: "${scored[0].event.title}" (score: ${scored[0].score.total.toFixed(1)})`);
     }
 
-    // If advanced client resolution is on and no meeting has external attendees mapped, clear selection
-    if (context.advancedClientResolution && data.selectedMeeting) {
-      const hasExternalAttendees = data.selectedMeeting.event.attendees.some(
-        (a) => !a.email.endsWith("@growrwanda.com")
-      );
-      if (!hasExternalAttendees) {
-        log.info("Advanced mode: selected meeting has no external attendees — clearing selection");
-        data.selectedMeeting = null;
-      }
-    }
-
     await store.saveArtifact(context.runId, "scored-meetings", scored);
     if (data.selectedMeeting) {
       await store.saveArtifact(context.runId, "selected-meeting", data.selectedMeeting);

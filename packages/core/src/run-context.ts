@@ -20,6 +20,8 @@ export interface RunContext {
   mappingSheetId?: string;
   /** Daily briefing text from Action Bot MCP integration */
   actionBotBriefing?: string;
+  /** User's timezone (e.g. "Africa/Kigali") for formatting times */
+  timezone?: string;
 }
 
 export function generateRunId(date: string): string {
