@@ -37,118 +37,157 @@ async function resolveAdvanced(context: RunContext): Promise<void> {
   const sheet = await loadMappingSheet(authConfig, context.mappingSheetId);
   log.info(`Loaded ${sheet.entries.length} mapping entries (${sheet.byDomain.size} domains, ${sheet.byEmail.size} emails)`);
 
-  // Try the selected meeting first, then runner-ups
-  const meetingsToTry = data.scoredMeetings.slice(0, 4);
-
-  for (const scoredMeeting of meetingsToTry) {
-    const event = scoredMeeting.event;
+  // === STEP 1: If we have a selected meeting, try to map it to a client ===
+  if (data.selectedMeeting) {
+    const event = data.selectedMeeting.event;
     const emails = event.attendees.map((a) => a.email);
     const lookupResult = lookupClientFolder(sheet, emails, event.title, ["growrwanda.com"]);
 
-    if (!lookupResult) {
-      log.info(`No mapping found for "${event.title}" — trying next meeting`);
-      continue;
-    }
+    if (lookupResult) {
+      log.info(`Mapped "${event.title}" -> client "${lookupResult.client}" (folder: ${lookupResult.driveFolderName})`);
 
-    log.info(`Mapped "${event.title}" -> client "${lookupResult.client}" (folder: ${lookupResult.driveFolderName}, domain: ${lookupResult.matchedDomain})`);
+      data.clientMapping = {
+        client: lookupResult.client,
+        driveFolderId: lookupResult.driveFolderId,
+        driveFolderName: lookupResult.driveFolderName,
+      };
 
-    // Set the client mapping on pipeline data
-    data.clientMapping = {
-      client: lookupResult.client,
-      driveFolderId: lookupResult.driveFolderId,
-      driveFolderName: lookupResult.driveFolderName,
-    };
+      try {
+        const projectContextResult = await loadProjectContext(
+          authConfig,
+          lookupResult.driveFolderId,
+          lookupResult.driveFolderName,
+        );
 
-    // Update selected meeting to the one we matched
-    data.selectedMeeting = scoredMeeting;
+        if (projectContextResult) {
+          log.info(`Loaded project context: ${projectContextResult.source} (${projectContextResult.text.length} chars)`);
 
-    // Load project context (state.md or latest transcript)
-    try {
-      const projectContextResult = await loadProjectContext(
-        authConfig,
-        lookupResult.driveFolderId,
-        lookupResult.driveFolderName,
-      );
+          data.meetingContext = {
+            meetingTitle: event.title,
+            meetingTime: event.startTime,
+            attendeeSummary: event.attendees.map((a) => a.name || a.email.split("@")[0]).join(", "),
+            summary: projectContextResult.text,
+            keyInsights: [],
+            pendingItems: [],
+            suggestedPrepQuestions: [],
+            relatedDocuments: [{ title: projectContextResult.fileName, relevance: `source: ${projectContextResult.source}` }],
+          };
 
-      if (projectContextResult) {
-        log.info(`Loaded project context: ${projectContextResult.source} (${projectContextResult.text.length} chars)`);
+          const doc: RetrievedDocument = {
+            id: projectContextResult.fileId,
+            externalFileId: projectContextResult.fileId,
+            title: projectContextResult.fileName,
+            sourceType: "doc",
+            lastModified: new Date().toISOString(),
+            relevanceScore: 100,
+            relevanceReason: `Primary context: ${projectContextResult.source}`,
+            extractedText: projectContextResult.text,
+          };
 
-        const meetingContext: MeetingContext = {
-          meetingTitle: event.title,
-          meetingTime: event.startTime,
-          attendeeSummary: event.attendees.map((a) => a.name || a.email.split("@")[0]).join(", "),
-          summary: projectContextResult.text,
-          keyInsights: [],
-          pendingItems: [],
-          suggestedPrepQuestions: [],
-          relatedDocuments: [{ title: projectContextResult.fileName, relevance: `source: ${projectContextResult.source}` }],
-        };
-
-        const doc: RetrievedDocument = {
-          id: projectContextResult.fileId,
-          externalFileId: projectContextResult.fileId,
-          title: projectContextResult.fileName,
-          sourceType: "doc",
-          lastModified: new Date().toISOString(),
-          relevanceScore: 100,
-          relevanceReason: `Primary context: ${projectContextResult.source}`,
-          extractedText: projectContextResult.text,
-        };
-
-        data.meetingContext = meetingContext;
-        data.relatedDocuments = [doc];
-      } else {
-        log.info("No project context found (no state.md or transcript)");
+          data.relatedDocuments = [doc];
+        } else {
+          log.info("No project context found (no state.md or transcript) — falling back to default resolution");
+          await resolveDefault(context);
+          return;
+        }
+      } catch (err) {
+        log.warn(`Failed to load project context: ${err instanceof Error ? err.message : err}`);
+        await resolveDefault(context);
+        return;
       }
-    } catch (err) {
-      log.warn(`Failed to load project context: ${err instanceof Error ? err.message : err}`);
-    }
 
-    // Save artifacts
-    await store.saveArtifact(context.runId, "related-documents", data.relatedDocuments);
-    await store.saveArtifact(context.runId, "meeting-context", data.meetingContext);
-    await store.saveArtifact(context.runId, "selected-meeting", data.selectedMeeting);
-    return;
+      await store.saveArtifact(context.runId, "related-documents", data.relatedDocuments);
+      await store.saveArtifact(context.runId, "meeting-context", data.meetingContext);
+      await store.saveArtifact(context.runId, "selected-meeting", data.selectedMeeting);
+      return;
+    } else {
+      log.info(`No mapping found for selected meeting "${event.title}" — trying runner-ups`);
+
+      // Try runner-up meetings
+      for (const scoredMeeting of data.scoredMeetings.slice(1, 4)) {
+        const runnerEmails = scoredMeeting.event.attendees.map((a) => a.email);
+        const runnerLookup = lookupClientFolder(sheet, runnerEmails, scoredMeeting.event.title, ["growrwanda.com"]);
+
+        if (runnerLookup) {
+          log.info(`Runner-up mapped: "${scoredMeeting.event.title}" -> "${runnerLookup.client}"`);
+          data.selectedMeeting = scoredMeeting;
+          data.clientMapping = {
+            client: runnerLookup.client,
+            driveFolderId: runnerLookup.driveFolderId,
+            driveFolderName: runnerLookup.driveFolderName,
+          };
+
+          try {
+            const result = await loadProjectContext(authConfig, runnerLookup.driveFolderId, runnerLookup.driveFolderName);
+            if (result) {
+              log.info(`Loaded runner-up context: ${result.source} (${result.text.length} chars)`);
+              data.meetingContext = {
+                meetingTitle: scoredMeeting.event.title,
+                meetingTime: scoredMeeting.event.startTime,
+                attendeeSummary: scoredMeeting.event.attendees.map((a) => a.name || a.email.split("@")[0]).join(", "),
+                summary: result.text,
+                keyInsights: [],
+                pendingItems: [],
+                suggestedPrepQuestions: [],
+                relatedDocuments: [{ title: result.fileName, relevance: `source: ${result.source}` }],
+              };
+              data.relatedDocuments = [{
+                id: result.fileId, externalFileId: result.fileId, title: result.fileName,
+                sourceType: "doc", lastModified: new Date().toISOString(),
+                relevanceScore: 100, relevanceReason: `Primary context: ${result.source}`,
+                extractedText: result.text,
+              }];
+
+              await store.saveArtifact(context.runId, "related-documents", data.relatedDocuments);
+              await store.saveArtifact(context.runId, "meeting-context", data.meetingContext);
+              await store.saveArtifact(context.runId, "selected-meeting", data.selectedMeeting);
+              return;
+            }
+          } catch (err) {
+            log.warn(`Failed to load runner-up context: ${err instanceof Error ? err.message : err}`);
+          }
+        }
+      }
+    }
   }
 
-  // No mapping found for any meeting — try loading project summaries for no-meeting fallback
-  log.info("No client mapping found for any meeting — loading project summaries as fallback");
+  // === STEP 2: No valid meeting or no mapping — load project summaries as fallback ===
+  log.info("No meeting with mapped context — loading active project summaries");
   data.selectedMeeting = null;
 
   try {
-    // Get top entries sorted by meeting count (entries are already in sheet order)
     const topEntries = sheet.entries
-      .filter((e) => e.matchType === "domain")
+      .filter((e) => e.matchType === "domain" && e.driveFolderId && e.driveFolderId !== "DROP")
       .sort((a, b) => b.meetingCount - a.meetingCount)
-      .slice(0, 5)
-      .map((e) => ({
-        client: e.client,
-        driveFolderId: e.driveFolderId,
-        driveFolderName: e.driveFolderName,
-      }));
+      .slice(0, 8);
 
-    // De-duplicate by client
+    // De-duplicate by folder
     const seen = new Set<string>();
     const uniqueEntries = topEntries.filter((e) => {
-      if (seen.has(e.client)) return false;
-      seen.add(e.client);
+      if (seen.has(e.driveFolderId)) return false;
+      seen.add(e.driveFolderId);
       return true;
-    });
+    }).slice(0, 5).map((e) => ({
+      client: e.client,
+      driveFolderId: e.driveFolderId,
+      driveFolderName: e.driveFolderName,
+    }));
 
-    const summaries = await loadMultipleProjectContexts(authConfig, uniqueEntries, 5);
+    log.info(`Loading project summaries from top ${uniqueEntries.length} clients: ${uniqueEntries.map((e) => e.client).join(", ")}`);
+
+    const summaries = await loadMultipleProjectContexts(authConfig, uniqueEntries, 3);
     data.projectSummaries = summaries.map((s) => ({
       client: s.client,
       summary: s.summary,
       source: s.source as "state.md" | "latest-transcript" | "drive-search",
     }));
 
-    log.info(`Loaded ${data.projectSummaries.length} project summaries for fallback`);
+    log.info(`Loaded ${data.projectSummaries.length} project summaries for general update`);
+
+    await store.saveArtifact(context.runId, "project-summaries" as any, data.projectSummaries);
   } catch (err) {
     log.warn(`Failed to load project summaries: ${err instanceof Error ? err.message : err}`);
   }
-
-  // Fall back to default resolution
-  await resolveDefault(context);
 }
 
 async function resolveDefault(context: RunContext): Promise<void> {
@@ -183,9 +222,8 @@ async function resolveDefault(context: RunContext): Promise<void> {
     log.info(`  [${doc.relevanceScore}] ${doc.title} — ${doc.relevanceReason}`);
   }
 
-  // ── Re-rank: update the selected meeting's score with doc engagement data ──
   if (data.scoredMeetings.length > 1 && result.engagement.engagementLevel === "none") {
-    log.info("Selected meeting has no Drive engagement — checking if another meeting has better engagement...");
+    log.info("Selected meeting has no Drive engagement — checking runner-up...");
 
     const runnerUp = data.scoredMeetings[1];
     try {
@@ -204,22 +242,16 @@ async function resolveDefault(context: RunContext): Promise<void> {
         runnerUpResult.engagement.engagementLevel === "high" ||
         runnerUpResult.engagement.engagementLevel === "medium"
       ) {
-        log.info(
-          `Runner-up "${runnerUp.event.title}" has ${runnerUpResult.engagement.engagementLevel} engagement ` +
-          `(${runnerUpResult.engagement.transcriptCount} transcripts) — promoting to selected meeting`
-        );
+        log.info(`Runner-up "${runnerUp.event.title}" has ${runnerUpResult.engagement.engagementLevel} engagement — promoting`);
         data.selectedMeeting = runnerUp;
         data.relatedDocuments = runnerUpResult.documents;
         data.meetingContext = runnerUpResult.context;
-      } else {
-        log.info("Runner-up also has low engagement — keeping original selection");
       }
     } catch (err) {
-      log.warn(`Failed to check runner-up context: ${err instanceof Error ? err.message : err}`);
+      log.warn(`Failed to check runner-up: ${err instanceof Error ? err.message : err}`);
     }
   }
 
-  // Save artifacts
   await store.saveArtifact(context.runId, "related-documents", data.relatedDocuments);
   await store.saveArtifact(context.runId, "meeting-context", data.meetingContext);
   await store.saveArtifact(context.runId, "selected-meeting", data.selectedMeeting);
