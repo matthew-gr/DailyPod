@@ -6,6 +6,7 @@ const voiceOptions = ["Charon", "Aoede", "Kore", "Puck", "Fenrir", "Leda", "Orus
 
 const timezones = [
   "UTC",
+  "Africa/Kigali",
   "America/New_York",
   "America/Chicago",
   "America/Denver",
@@ -28,6 +29,8 @@ interface Prefs {
   newsInterests: string[];
   newsToIgnore: string[];
   timezone: string;
+  advancedClientResolution: boolean;
+  mappingSheetId: string;
 }
 
 export default function PreferencesPage() {
@@ -121,7 +124,7 @@ export default function PreferencesPage() {
           >
             {timezones.map((tz) => (
               <option key={tz} value={tz}>
-                {tz}
+                {tz === "Africa/Kigali" ? "Africa/Kigali (CAT)" : tz}
               </option>
             ))}
           </select>
@@ -207,6 +210,37 @@ export default function PreferencesPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             placeholder="e.g., celebrity gossip, sports scores"
           />
+        </div>
+
+        {/* Advanced Client Resolution */}
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={prefs.advancedClientResolution}
+              onChange={(e) => setPrefs({ ...prefs, advancedClientResolution: e.target.checked })}
+              className="rounded border-gray-300 text-blue-600"
+            />
+            Enable advanced client resolution
+          </label>
+          <p className="text-xs text-gray-500 mt-1">
+            Uses a mapping spreadsheet to match meetings to client folders with State/state.md context.
+            Requires structured Drive folders.
+          </p>
+          {prefs.advancedClientResolution && (
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mapping Sheet ID
+              </label>
+              <input
+                type="text"
+                value={prefs.mappingSheetId}
+                onChange={(e) => setPrefs({ ...prefs, mappingSheetId: e.target.value })}
+                placeholder="Google Sheets ID"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+          )}
         </div>
 
         {/* Save */}

@@ -26,6 +26,8 @@ export async function GET() {
     newsInterests: JSON.parse(prefs.newsInterests),
     newsToIgnore: JSON.parse(prefs.newsToIgnore),
     timezone: prefs.timezone,
+    advancedClientResolution: prefs.advancedClientResolution,
+    mappingSheetId: prefs.mappingSheetId || "",
   });
 }
 
@@ -48,6 +50,10 @@ export async function PUT(request: Request) {
   if (body.newsToIgnore !== undefined)
     data.newsToIgnore = JSON.stringify(body.newsToIgnore);
   if (body.timezone !== undefined) data.timezone = body.timezone;
+  if (body.advancedClientResolution !== undefined)
+    data.advancedClientResolution = body.advancedClientResolution;
+  if (body.mappingSheetId !== undefined)
+    data.mappingSheetId = body.mappingSheetId || null;
 
   const prefs = await prisma.userPreferences.upsert({
     where: { userId: session.user.id },
@@ -63,5 +69,7 @@ export async function PUT(request: Request) {
     newsInterests: JSON.parse(prefs.newsInterests),
     newsToIgnore: JSON.parse(prefs.newsToIgnore),
     timezone: prefs.timezone,
+    advancedClientResolution: prefs.advancedClientResolution,
+    mappingSheetId: prefs.mappingSheetId || "",
   });
 }

@@ -40,4 +40,6 @@ export type {
   RunStatus,
   RunResult,
   PipelineData,
+  ClientMapping,
+  ProjectSummary,
 } from "./pipeline.js";

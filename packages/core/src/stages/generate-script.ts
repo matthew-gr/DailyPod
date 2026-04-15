@@ -24,6 +24,7 @@ export const generateScriptStage: PipelineStage = {
         meetingContext: data.meetingContext,
         rankedNews: data.rankedNews,
         guide,
+        projectSummaries: data.projectSummaries.length > 0 ? data.projectSummaries : undefined,
       },
       {
         apiKey: config.llm.apiKey,

@@ -15,6 +15,8 @@
     "@dailypod/calendar": "workspace:*",
     "@dailypod/meeting-ranker": "workspace:*",
     "@dailypod/drive": "workspace:*",
+    "@dailypod/mapping": "workspace:*",
+    "@dailypod/project-context": "workspace:*",
     "@dailypod/meeting-context": "workspace:*",
     "@dailypod/news": "workspace:*",
     "@dailypod/news-ranker": "workspace:*",

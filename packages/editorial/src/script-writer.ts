@@ -10,6 +10,7 @@ import type {
   CalendarEvent,
   Script,
   ScriptLine,
+  ProjectSummary,
 } from "@dailypod/types";
 
 export interface ScriptWriterConfig {
@@ -27,6 +28,7 @@ export interface ScriptWriterInput {
   meetingContext: MeetingContext | null;
   rankedNews: RankedNewsStory[];
   guide: BriefingGuide;
+  projectSummaries?: ProjectSummary[];
 }
 
 function formatTime(isoTime: string): string {
@@ -65,6 +67,18 @@ function buildUserPrompt(input: ScriptWriterInput): string {
       const attendeeStr = m.attendees.slice(0, 4).map((a) => a.name || a.email.split("@")[0]).join(", ");
       const more = m.attendees.length > 4 ? ` +${m.attendees.length - 4} more` : "";
       parts.push(`  ${formatTime(m.startTime)} — ${m.title} (${attendeeStr}${more})${m.isRecurring ? " [recurring]" : ""}`);
+    }
+    parts.push("Include a 1-2 line spoken schedule overview after the opening — how many meetings, first client meeting, what we'll deep-dive on.");
+    parts.push("");
+  }
+
+  // === ACTIVE PROJECTS OVERVIEW (no-meeting fallback) ===
+  if (!input.meetingContext && input.projectSummaries && input.projectSummaries.length > 0) {
+    parts.push("=== ACTIVE PROJECTS OVERVIEW (no focus meeting today) ===");
+    parts.push("Summarize each project briefly: current status, open items, what matters next.");
+    for (const ps of input.projectSummaries) {
+      parts.push(`\nProject: ${ps.client} (source: ${ps.source})`);
+      parts.push(ps.summary.slice(0, 2000));
     }
     parts.push("");
   }
@@ -111,6 +125,7 @@ function buildUserPrompt(input: ScriptWriterInput): string {
   // === NEWS ===
   if (input.rankedNews.length > 0) {
     parts.push("=== NEWS SEGMENT ===");
+    parts.push("Summarize each story concisely and interestingly. Do not try to connect stories back to the listener's business. Just cover what happened and why it matters. Keep each story to about 30 seconds.");
     for (const ns of input.rankedNews) {
       parts.push(`Story: ${ns.story.title}`);
       parts.push(`Source: ${ns.story.source}`);
@@ -279,8 +294,10 @@ CRITICAL CONTENT RULES:
 - DO dive into the actual substance: what was discussed last time, what decisions are pending, what questions to ask, what the listener should push on
 - DO provide interesting perspectives, insights, or possible avenues to provide more client value
 - DO challenge the listener's thinking. Suggest angles they might not have considered. Play devil's advocate briefly.
-- DO connect news stories to the listener's work where relevant
+- DO summarize each news story concisely and interestingly. Do not try to connect stories back to the listener's business. Just cover what happened and why it matters. Keep each story to about 30 seconds.
 - The priority reflection should be 2-3 lines max. Grounding, not preachy.
+- HARD RULE: If no valid meeting exists, do NOT invent one. If context is weak, say less. Never combine unrelated meetings.
+- After the opening line, include a 1-2 line spoken schedule overview: how many meetings, first client meeting, what we'll deep-dive on.
 
 ANTI-PATTERNS (never do these):
 - "Great question" / "That's a great point" / "Absolutely" / "Indeed"

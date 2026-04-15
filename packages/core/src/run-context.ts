@@ -14,6 +14,10 @@ export interface RunContext {
   data: PipelineData;
   /** Pre-built learning prompt from feedback (used by web app instead of learningDir) */
   learningPrompt?: string;
+  /** Enable structured client resolution via mapping sheet + State/state.md */
+  advancedClientResolution?: boolean;
+  /** Google Sheets ID for the client domain → folder mapping */
+  mappingSheetId?: string;
 }
 
 export function generateRunId(date: string): string {
@@ -40,6 +44,8 @@ export function createRunContext(params: {
     selectedMeeting: null,
     relatedDocuments: [],
     meetingContext: null,
+    clientMapping: null,
+    projectSummaries: [],
     candidateNews: [],
     rankedNews: [],
     episodePlan: null,

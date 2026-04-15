@@ -15,7 +15,16 @@ export const rankNewsStage: PipelineStage = {
       return;
     }
 
-    const ranked = rankNews(data.candidateNews, guide, 2);
+    // Dynamic news count based on briefing length and meeting presence
+    const briefingMinutes = context.runConfig.briefingLengthMinutes;
+    const hasMeeting = data.selectedMeeting !== null;
+    const newsTimeFraction = hasMeeting ? 0.30 : 0.50;
+    const newsSegmentSeconds = Math.round(briefingMinutes * 60 * newsTimeFraction);
+    const topN = Math.max(2, Math.round(newsSegmentSeconds / 30));
+
+    log.info(`Briefing: ${briefingMinutes}min, meeting: ${hasMeeting}, news allocation: ~${newsSegmentSeconds}s, topN: ${topN}`);
+
+    const ranked = rankNews(data.candidateNews, guide, topN);
     data.rankedNews = ranked;
 
     log.info(`Selected ${ranked.length} top stories from ${data.candidateNews.length} candidates:`);

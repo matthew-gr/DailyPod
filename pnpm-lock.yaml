@@ -169,6 +169,18 @@ importers:
         specifier: ^144.0.0
         version: 144.0.0
 
+  packages/connectors/mapping:
+    dependencies:
+      '@dailypod/calendar':
+        specifier: workspace:*
+        version: link:../calendar
+      '@dailypod/types':
+        specifier: workspace:*
+        version: link:../../types
+      googleapis:
+        specifier: ^144.0.0
+        version: 144.0.0
+
   packages/connectors/news:
     dependencies:
       '@dailypod/types':
@@ -177,6 +189,18 @@ importers:
       fast-xml-parser:
         specifier: ^5.2.0
         version: 5.5.11
+
+  packages/connectors/project-context:
+    dependencies:
+      '@dailypod/calendar':
+        specifier: workspace:*
+        version: link:../calendar
+      '@dailypod/types':
+        specifier: workspace:*
+        version: link:../../types
+      googleapis:
+        specifier: ^144.0.0
+        version: 144.0.0
 
   packages/core:
     dependencies:
@@ -201,6 +225,9 @@ importers:
       '@dailypod/logging':
         specifier: workspace:*
         version: link:../logging
+      '@dailypod/mapping':
+        specifier: workspace:*
+        version: link:../connectors/mapping
       '@dailypod/meeting-context':
         specifier: workspace:*
         version: link:../resolver/meeting-context
@@ -213,6 +240,9 @@ importers:
       '@dailypod/news-ranker':
         specifier: workspace:*
         version: link:../ranking/news-ranker
+      '@dailypod/project-context':
+        specifier: workspace:*
+        version: link:../connectors/project-context
       '@dailypod/storage':
         specifier: workspace:*
         version: link:../storage

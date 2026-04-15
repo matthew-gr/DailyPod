@@ -15,6 +15,7 @@ export const planSegmentsStage: PipelineStage = {
       guide,
       targetLengthMinutes: runConfig.briefingLengthMinutes,
       date: runConfig.date,
+      projectSummaries: data.projectSummaries.length > 0 ? data.projectSummaries : undefined,
     });
 
     data.episodePlan = plan;

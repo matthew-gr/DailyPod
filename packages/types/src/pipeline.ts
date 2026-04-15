@@ -33,12 +33,26 @@ export interface RunResult {
   error?: string;
 }
 
+export interface ClientMapping {
+  client: string;
+  driveFolderId: string;
+  driveFolderName: string;
+}
+
+export interface ProjectSummary {
+  client: string;
+  summary: string;
+  source: "state.md" | "latest-transcript" | "drive-search";
+}
+
 export interface PipelineData {
   meetings: CalendarEvent[];
   scoredMeetings: ScoredMeeting[];
   selectedMeeting: ScoredMeeting | null;
   relatedDocuments: RetrievedDocument[];
   meetingContext: MeetingContext | null;
+  clientMapping: ClientMapping | null;
+  projectSummaries: ProjectSummary[];
   candidateNews: NewsStory[];
   rankedNews: RankedNewsStory[];
   episodePlan: EpisodePlan | null;

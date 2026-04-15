@@ -1,0 +1,12 @@
+{
+  "name": "@dailypod/mapping",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@dailypod/types": "workspace:*",
+    "@dailypod/calendar": "workspace:*",
+    "googleapis": "^144.0.0"
+  }
+}

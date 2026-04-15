@@ -37,6 +37,8 @@ export async function buildUserRunContext(
     newsInterests: "[]",
     newsToIgnore: "[]",
     timezone: "UTC",
+    advancedClientResolution: false,
+    mappingSheetId: null,
   };
 
   const appConfig: AppConfig = {
@@ -74,6 +76,10 @@ export async function buildUserRunContext(
     logger,
     store,
   });
+
+  // Set advanced client resolution settings
+  context.advancedClientResolution = prefs.advancedClientResolution ?? false;
+  context.mappingSheetId = prefs.mappingSheetId || undefined;
 
   // Build learning prompt from user's stored feedback data
   if (user?.learnedPreferences || user?.learnedExamples) {
