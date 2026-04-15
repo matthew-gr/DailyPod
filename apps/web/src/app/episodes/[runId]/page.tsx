@@ -185,6 +185,20 @@ export default async function EpisodeDetailPage({
         </div>
       )}
 
+      {/* Context Audit — collapsible */}
+      {run.scriptPromptUsed && (
+        <details className="rounded-lg border border-gray-200 bg-white">
+          <summary className="p-4 cursor-pointer text-sm font-medium text-gray-500 uppercase tracking-wide hover:text-gray-700">
+            Context Audit — What was fed to the script writer
+          </summary>
+          <div className="px-6 pb-6">
+            <pre className="text-xs text-gray-600 whitespace-pre-wrap bg-gray-50 rounded p-4 max-h-96 overflow-y-auto font-mono leading-relaxed">
+              {run.scriptPromptUsed}
+            </pre>
+          </div>
+        </details>
+      )}
+
       {/* Script */}
       {script && script.lines.length > 0 && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">

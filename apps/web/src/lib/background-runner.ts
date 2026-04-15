@@ -80,6 +80,7 @@ export async function startRun(
           meetingContextJson: meetingContext
             ? JSON.stringify(meetingContext)
             : null,
+          scriptPromptUsed: context.data.script?.promptUsed || null,
           audioDurationSeconds: audioDuration
             ? Math.round(audioDuration)
             : null,

@@ -34,4 +34,6 @@ export interface ScriptLine {
 export interface Script {
   lines: ScriptLine[];
   estimatedDurationSeconds: number;
+  /** The full user prompt that was sent to the LLM (for debugging/audit) */
+  promptUsed?: string;
 }

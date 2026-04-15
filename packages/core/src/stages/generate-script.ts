@@ -46,6 +46,11 @@ export const generateScriptStage: PipelineStage = {
     // Also save as readable markdown
     const markdown = scriptToMarkdown(script);
     await store.saveFile(context.runId, "script.md", markdown);
+
+    // Save the prompt that was sent to the LLM (for debugging/audit)
+    if (script.promptUsed) {
+      await store.saveFile(context.runId, "script-prompt.txt", script.promptUsed);
+    }
   },
 };
 

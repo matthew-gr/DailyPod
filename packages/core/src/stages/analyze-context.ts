@@ -119,12 +119,14 @@ DO:
 - If relevant, mention a tool, technique, or resource by name that could help (e.g. "Notion AI for doc generation", "n8n for automating the intake workflow")
 - Keep prep questions to 1-2 max — only if genuinely important
 
+RATIO RULE: Your output should be 80% insights and statements, 20% or less questions. The listener wants to be TOLD what matters, not ASKED what they think. Lead with conclusions, not questions.
+
 OUTPUT FORMAT — return valid JSON:
 {
-  "summary": "2-4 sentences on where this project stands and what matters most right now",
-  "keyInsights": ["specific insight or suggestion that adds value", "another angle worth considering"],
-  "pendingItems": ["concrete thing that needs resolution", "specific follow-up the listener owns"],
-  "suggestedPrepQuestions": ["at most 1-2 sharp questions, only if truly needed"]
+  "summary": "2-4 sentences on where this project stands and what matters most right now. Be declarative, not interrogative.",
+  "keyInsights": ["specific insight stated as a fact or recommendation — NOT a question", "another concrete angle or suggestion"],
+  "pendingItems": ["concrete thing that needs resolution — state it as a fact", "specific follow-up the listener owns"],
+  "suggestedPrepQuestions": ["at most 1 sharp question, only if genuinely critical — most runs should have 0-1 questions"]
 }
 
-Keep each array to 2-4 items. Be specific and substantive.`;
+Keep keyInsights to 3-5 items. Keep pendingItems to 2-3 items. Keep suggestedPrepQuestions to 0-1 items. Be specific and substantive.`;

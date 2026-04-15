@@ -45,11 +45,12 @@ function buildUserPrompt(input: ScriptWriterInput): string {
   const parts: string[] = [];
 
   const targetMinutes = Math.round(input.plan.totalTargetDurationSeconds / 60);
-  // Real TTS speed: 157 wpm. LLM delivers ~53% of requested words.
-  // To get X minutes: need X*157 words spoken, request X*157/0.53 = X*296 words
-  // For 5 min: need 785 words, request 1483 words
+  // Real TTS speed: 157 wpm. With retry loop, LLM delivers ~75% of requested words.
+  // To get X minutes: need X*157 words spoken, request X*157/0.75
+  // For 5 min: need 785 words, request 1047 words
+  // For 7 min: need 1099 words, request 1466 words
   const wordsNeeded = Math.round((input.plan.totalTargetDurationSeconds / 60) * 157);
-  const targetWords = Math.round(wordsNeeded / 0.53);
+  const targetWords = Math.round(wordsNeeded / 0.75);
 
   parts.push(`DATE: ${input.plan.date}`);
   parts.push(`TARGET DURATION: ${targetMinutes} minutes (${input.plan.totalTargetDurationSeconds} seconds)`);
@@ -217,9 +218,10 @@ export async function generateScript(
     }
   }
 
-  // Calculate minimum acceptable word count (80% of what we need for target duration)
+  // Calculate acceptable word count range for target duration
   const targetDurationMin = input.plan.totalTargetDurationSeconds / 60;
-  const minAcceptableWords = Math.round(targetDurationMin * TTS_WORDS_PER_MINUTE * 0.8);
+  const minAcceptableWords = Math.round(targetDurationMin * TTS_WORDS_PER_MINUTE * 0.85);
+  const maxAcceptableWords = Math.round(targetDurationMin * TTS_WORDS_PER_MINUTE * 1.15);
 
   // Retry loop: generate script, check word count, retry if too short
   const MAX_ATTEMPTS = 3;
@@ -263,12 +265,36 @@ export async function generateScript(
     console.log(`Script attempt ${attempt}: ${wordCount} words (need ${minAcceptableWords}), ${lines.length} lines — retrying`);
   }
 
+  // Trim if too long — remove lines from the middle segments (keep opening/closing)
+  let finalLines = bestLines;
+  let finalWordCount = bestWordCount;
+
+  if (finalWordCount > maxAcceptableWords && finalLines.length > 4) {
+    while (finalWordCount > maxAcceptableWords && finalLines.length > 4) {
+      // Find the longest non-opening, non-closing line and remove it
+      let longestIdx = -1;
+      let longestWords = 0;
+      for (let i = 1; i < finalLines.length - 1; i++) {
+        const wc = finalLines[i].text.split(/\s+/).length;
+        if (wc > longestWords) {
+          longestWords = wc;
+          longestIdx = i;
+        }
+      }
+      if (longestIdx === -1) break;
+      finalLines.splice(longestIdx, 1);
+      finalWordCount = countWords(finalLines);
+    }
+    console.log(`Trimmed script from ${bestWordCount} to ${finalWordCount} words (max: ${maxAcceptableWords})`);
+  }
+
   // Use real TTS speed for duration estimate
-  const estimatedDurationSeconds = Math.round((bestWordCount / TTS_WORDS_PER_MINUTE) * 60);
+  const estimatedDurationSeconds = Math.round((finalWordCount / TTS_WORDS_PER_MINUTE) * 60);
 
   return {
-    lines: bestLines,
+    lines: finalLines,
     estimatedDurationSeconds,
+    promptUsed: userPrompt,
   };
 }
 
