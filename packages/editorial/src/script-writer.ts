@@ -29,6 +29,7 @@ export interface ScriptWriterInput {
   rankedNews: RankedNewsStory[];
   guide: BriefingGuide;
   projectSummaries?: ProjectSummary[];
+  actionBotBriefing?: string;
 }
 
 function formatTime(isoTime: string): string {
@@ -134,11 +135,19 @@ function buildUserPrompt(input: ScriptWriterInput): string {
     }
   }
 
-  // === PRIORITIES ===
-  parts.push("=== PRIORITY REFLECTION (keep brief — 2-3 lines max) ===");
-  parts.push("Current priorities:");
-  for (const p of input.guide.currentPriorities) {
-    parts.push(`  - ${p}`);
+  // === PRIORITIES / ACTION BOT BRIEFING ===
+  if (input.actionBotBriefing) {
+    parts.push("=== DAILY FOCUS (from Action Bot) ===");
+    parts.push("Use the following daily briefing summary as the basis for the final focus/priorities section.");
+    parts.push("Summarize it concisely — do not read it verbatim. Highlight the key focus areas and any workload notes.");
+    parts.push("");
+    parts.push(input.actionBotBriefing);
+  } else {
+    parts.push("=== PRIORITY REFLECTION (keep brief — 2-3 lines max) ===");
+    parts.push("Current priorities:");
+    for (const p of input.guide.currentPriorities) {
+      parts.push(`  - ${p}`);
+    }
   }
 
   return parts.join("\n");

@@ -18,6 +18,8 @@ export interface RunContext {
   advancedClientResolution?: boolean;
   /** Google Sheets ID for the client domain → folder mapping */
   mappingSheetId?: string;
+  /** Daily briefing text from Action Bot MCP integration */
+  actionBotBriefing?: string;
 }
 
 export function generateRunId(date: string): string {

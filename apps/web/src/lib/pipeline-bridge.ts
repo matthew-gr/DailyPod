@@ -81,6 +81,24 @@ export async function buildUserRunContext(
   context.advancedClientResolution = prefs.advancedClientResolution ?? false;
   context.mappingSheetId = prefs.mappingSheetId || undefined;
 
+  // Load Action Bot daily briefing if connected
+  try {
+    const { getValidToken, callDailyBriefing } = await import("@/lib/actionbot-mcp");
+    const tokenResult = await getValidToken(userId);
+    if (tokenResult) {
+      const briefingText = await callDailyBriefing(
+        tokenResult.accessToken,
+        tokenResult.mcpEndpoint
+      );
+      if (briefingText) {
+        context.actionBotBriefing = briefingText;
+      }
+    }
+  } catch (err) {
+    // Action Bot is optional — log and continue
+    console.warn("Action Bot briefing fetch failed:", err);
+  }
+
   // Build learning prompt from user's stored feedback data
   if (user?.learnedPreferences || user?.learnedExamples) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -25,6 +25,7 @@ export const generateScriptStage: PipelineStage = {
         rankedNews: data.rankedNews,
         guide,
         projectSummaries: data.projectSummaries.length > 0 ? data.projectSummaries : undefined,
+        actionBotBriefing: context.actionBotBriefing,
       },
       {
         apiKey: config.llm.apiKey,
