@@ -32,6 +32,20 @@ export default async function EpisodeDetailPage({
     notFound();
   }
 
+  // Find previous and next episodes for navigation
+  const [prevRun, nextRun] = await Promise.all([
+    prisma.briefingRun.findFirst({
+      where: { userId: session.user.id, createdAt: { lt: run.createdAt } },
+      orderBy: { createdAt: "desc" },
+      select: { runId: true, date: true },
+    }),
+    prisma.briefingRun.findFirst({
+      where: { userId: session.user.id, createdAt: { gt: run.createdAt } },
+      orderBy: { createdAt: "asc" },
+      select: { runId: true, date: true },
+    }),
+  ]);
+
   // Load script from artifacts
   let script: { lines: ScriptLine[]; estimatedDurationSeconds: number } | null =
     null;
@@ -62,13 +76,41 @@ export default async function EpisodeDetailPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Episode: {run.date}</h1>
-        <p className="mt-1 text-gray-600">
-          {run.status === "completed" ? "Completed" : run.status}
-          {run.audioDurationSeconds &&
-            ` | ${Math.round(run.audioDurationSeconds / 60)} minutes`}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Episode: {run.date}</h1>
+          <p className="mt-1 text-gray-600">
+            {run.status === "completed" ? "Completed" : run.status}
+            {run.audioDurationSeconds &&
+              ` | ${Math.round(run.audioDurationSeconds / 60)} minutes`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {prevRun ? (
+            <a
+              href={`/episodes/${prevRun.runId}`}
+              className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              title={`Previous: ${prevRun.date}`}
+            >
+              <span className="text-lg">&larr;</span>
+              <span className="hidden sm:inline">{prevRun.date}</span>
+            </a>
+          ) : (
+            <span className="px-3 py-2 text-sm text-gray-300">&larr;</span>
+          )}
+          {nextRun ? (
+            <a
+              href={`/episodes/${nextRun.runId}`}
+              className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              title={`Next: ${nextRun.date}`}
+            >
+              <span className="hidden sm:inline">{nextRun.date}</span>
+              <span className="text-lg">&rarr;</span>
+            </a>
+          ) : (
+            <span className="px-3 py-2 text-sm text-gray-300">&rarr;</span>
+          )}
+        </div>
       </div>
 
       {/* Audio Player */}
