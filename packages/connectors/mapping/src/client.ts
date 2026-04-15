@@ -132,7 +132,32 @@ export function lookupClientFolder(
     }
   }
 
-  if (matches.length === 0) return null;
+  if (matches.length === 0) {
+    // Fallback: try matching meeting title against client names and folder names
+    // This catches cases like "Testifyre x GRW Dev Meetings" where all attendees are internal
+    const titleLower = meetingTitle.toLowerCase();
+    const titleMatch = sheet.entries.find((entry) => {
+      const clientLower = entry.client.toLowerCase();
+      const folderLower = entry.driveFolderName.toLowerCase();
+      // Check if client name or folder name appears in the title
+      return (
+        (clientLower.length > 2 && titleLower.includes(clientLower)) ||
+        (folderLower.length > 2 && titleLower.includes(folderLower))
+      );
+    });
+
+    if (titleMatch) {
+      return {
+        client: titleMatch.client,
+        driveFolderId: titleMatch.driveFolderId,
+        driveFolderName: titleMatch.driveFolderName,
+        matchedDomain: `title-match:${titleMatch.client}`,
+        matchedAttendeeCount: 0,
+      };
+    }
+
+    return null;
+  }
 
   if (matches.length === 1) {
     const m = matches[0];
