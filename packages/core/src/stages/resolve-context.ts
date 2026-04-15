@@ -86,24 +86,26 @@ async function resolveAdvanced(context: RunContext): Promise<void> {
 
           data.relatedDocuments = [doc];
         } else {
-          log.info("No project context found (no state.md or transcript) — falling back to default resolution");
-          await resolveDefault(context);
-          return;
+          log.info("No project context found for matched client — will try other meetings or load project summaries");
+          // Don't return — fall through to try runner-ups or load summaries
         }
       } catch (err) {
         log.warn(`Failed to load project context: ${err instanceof Error ? err.message : err}`);
-        await resolveDefault(context);
-        return;
       }
 
-      await store.saveArtifact(context.runId, "related-documents", data.relatedDocuments);
-      await store.saveArtifact(context.runId, "meeting-context", data.meetingContext);
-      await store.saveArtifact(context.runId, "selected-meeting", data.selectedMeeting);
-      return;
-    } else {
-      log.info(`No mapping found for selected meeting "${event.title}" — trying runner-ups`);
+      // If we got meeting context, save and return
+      if (data.meetingContext) {
+        await store.saveArtifact(context.runId, "related-documents", data.relatedDocuments);
+        await store.saveArtifact(context.runId, "meeting-context", data.meetingContext);
+        await store.saveArtifact(context.runId, "selected-meeting", data.selectedMeeting);
+        return;
+      }
+      // Otherwise fall through to runner-ups and then project summaries
+    }
 
-      // Try runner-up meetings
+    // Try runner-up meetings (runs if selected meeting had no mapping OR had mapping but no state.md)
+    if (!data.meetingContext) {
+      log.info("Trying runner-up meetings for context...");
       for (const scoredMeeting of data.scoredMeetings.slice(1, 4)) {
         const runnerEmails = scoredMeeting.event.attendees.map((a) => a.email);
         const runnerLookup = lookupClientFolder(sheet, runnerEmails, scoredMeeting.event.title, ["growrwanda.com"]);

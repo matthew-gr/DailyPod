@@ -50,7 +50,7 @@ export default async function EpisodeDetailPage({
   let script: { lines: ScriptLine[]; estimatedDurationSeconds: number } | null =
     null;
 
-  const artifactsBase = process.env.ARTIFACTS_BASE_PATH || "data";
+  const artifactsBase = process.env.ARTIFACTS_BASE_PATH || "/app/data";
   const runArtifactDir = resolve(artifactsBase, "artifacts", session.user.id, runId);
 
   const scriptPath = resolve(runArtifactDir, "script.json");

@@ -24,7 +24,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const artifactsBase = process.env.ARTIFACTS_BASE_PATH || "data";
+  const artifactsBase = process.env.ARTIFACTS_BASE_PATH || "/app/data";
   const audioPath = resolve(artifactsBase, "artifacts", session.user.id, runId, "briefing.mp3");
 
   if (!existsSync(audioPath)) {
