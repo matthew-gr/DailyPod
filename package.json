@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "briefing:run": "tsx apps/cli/src/index.ts run",
     "briefing:inspect": "tsx apps/cli/src/index.ts inspect",
