@@ -114,7 +114,7 @@ export default async function EpisodeDetailPage({
       </div>
 
       {/* Audio Player */}
-      {hasAudio && (
+      {hasAudio ? (
         <div>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
@@ -130,7 +130,15 @@ export default async function EpisodeDetailPage({
           </div>
           <AudioPlayer runId={runId} />
         </div>
-      )}
+      ) : run.status === "completed" && script ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <h3 className="text-sm font-medium text-amber-900 mb-1">Audio not available</h3>
+          <p className="text-sm text-amber-800">
+            The script was generated but audio rendering didn't produce a file.
+            {run.error && <span className="block mt-1 text-xs">Error: {run.error}</span>}
+          </p>
+        </div>
+      ) : null}
 
       {/* Meeting & News Info */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -167,8 +175,10 @@ export default async function EpisodeDetailPage({
 
           {meetingContext.summary && (
             <div className="mb-4">
-              <h3 className="text-xs font-medium text-gray-400 uppercase mb-1">Summary</h3>
-              <p className="text-sm text-gray-800 leading-relaxed">{meetingContext.summary}</p>
+              <h3 className="text-xs font-medium text-gray-400 uppercase mb-2">Summary</h3>
+              <div className="text-sm text-gray-800 leading-relaxed bg-gray-50 rounded p-4 max-h-96 overflow-y-auto whitespace-pre-wrap font-sans">
+                {meetingContext.summary}
+              </div>
             </div>
           )}
 
