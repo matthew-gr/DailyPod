@@ -126,7 +126,11 @@ function buildUserPrompt(input: ScriptWriterInput): string {
 
     if (input.meetingContext.summary) {
       parts.push("CONTEXT FROM PRIOR TRANSCRIPTS AND DOCUMENTS:");
-      parts.push(input.meetingContext.summary);
+      // Cap context at 8000 chars to avoid blowing the prompt budget
+      const summaryText = input.meetingContext.summary.length > 8000
+        ? input.meetingContext.summary.slice(0, 8000) + "\n\n[truncated for length]"
+        : input.meetingContext.summary;
+      parts.push(summaryText);
       parts.push("");
     }
   }
@@ -248,15 +252,23 @@ export async function generateScript(
       contents: [{ role: "user", parts: [{ text: promptForAttempt }] }],
       systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
       generationConfig: {
-        temperature: 0.8 + (attempt - 1) * 0.1, // slightly higher temp on retries
-        maxOutputTokens: 16384,
+        temperature: 0.8 + (attempt - 1) * 0.1,
+        maxOutputTokens: 32768,
         responseMimeType: "application/json",
         // @ts-expect-error - thinkingConfig available on 2.5 models
-        thinkingConfig: { thinkingBudget: 512 },
+        thinkingConfig: { thinkingBudget: 4096 },
       },
     });
 
-    const lines = parseScriptResponse(result.response.text());
+    const responseText = result.response.text();
+    const finishReason = result.response.candidates?.[0]?.finishReason;
+    const promptFeedback = result.response.promptFeedback;
+
+    if (!responseText || responseText.length === 0) {
+      console.log(`Script attempt ${attempt}: empty response. finishReason=${finishReason} blockReason=${promptFeedback?.blockReason} promptLen=${promptForAttempt.length}`);
+    }
+
+    const lines = parseScriptResponse(responseText);
     const wordCount = countWords(lines);
 
     if (wordCount > bestWordCount) {
